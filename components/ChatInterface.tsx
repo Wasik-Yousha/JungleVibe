@@ -10,7 +10,7 @@ import {
   AVATARS_FEMALE
 } from '../constants';
 import Avatar from './Avatar';
-import { Send, Sword, Crown, ArrowLeft, RefreshCw } from 'lucide-react';
+import { Send, Crown, ArrowLeft, Zap } from 'lucide-react';
 import { generateTribeChallenge } from '../services/gemini';
 
 interface ChatInterfaceProps {
@@ -28,15 +28,48 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
   const [recipient, setRecipient] = useState<any>(null);
   const [todaysMessageCount, setTodaysMessageCount] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Pull to refresh state
+  const [pullDistance, setPullDistance] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef(0);
+  const isPulling = useRef(false);
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // Refresh message count for private chats
-    if (mode === ChatMode.NORMAL && user && recipientId) {
-      const count = await firebaseMessages.getTodaysMessageCount(user.id, recipientId);
-      setTodaysMessageCount(count);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+      isPulling.current = true;
     }
-    setTimeout(() => setIsRefreshing(false), 500);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isPulling.current || !scrollRef.current) return;
+    if (scrollRef.current.scrollTop > 0) {
+      isPulling.current = false;
+      setPullDistance(0);
+      return;
+    }
+    const diff = e.touches[0].clientY - touchStartY.current;
+    if (diff > 0) {
+      setPullDistance(Math.min(diff * 0.5, 80));
+    }
+  };
+
+  const handleTouchEnd = async () => {
+    if (pullDistance > 60) {
+      setIsRefreshing(true);
+      // Refresh message count for private chats
+      if (mode === ChatMode.NORMAL && user && recipientId) {
+        const count = await firebaseMessages.getTodaysMessageCount(user.id, recipientId);
+        setTodaysMessageCount(count);
+      }
+      if (mode === ChatMode.JUNGLE) {
+        generateTribeChallenge().then(setChallenge);
+      }
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+    setPullDistance(0);
+    isPulling.current = false;
   };
 
   // Fetch recipient info if private
@@ -165,19 +198,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
         </button>
         
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <button 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className={`p-1 border-2 active:scale-95 ${isJungle ? 'border-jungle-accent text-jungle-accent hover:bg-jungle-700' : 'border-retro-dark text-retro-dark hover:bg-retro-light'} ${isRefreshing ? 'animate-spin' : ''}`}
-          >
-            <RefreshCw size={16} />
-          </button>
           {isJungle ? (
             <>
-              <div className="w-9 h-9 bg-jungle-900 border-2 border-jungle-accent flex items-center justify-center relative overflow-hidden flex-shrink-0">
-                <div className="absolute inset-0 bg-jungle-pattern opacity-50"></div>
-                <Sword className="text-jungle-accent relative z-10" size={16} />
-              </div>
               <div className="min-w-0">
                 <h1 className="font-display text-xs text-jungle-accent tracking-wider truncate">THE WILD TRIBE</h1>
                 <p className="font-sans text-[10px] text-jungle-neon opacity-80">Deep Jungle • Anonymous</p>
@@ -185,8 +207,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
             </>
           ) : (
             <>
-              <div className="w-9 h-9 border-2 border-retro-dark overflow-hidden bg-white flex-shrink-0">
-                {recipient && <img src={recipient.avatarUrl} className="w-full h-full object-cover" style={{imageRendering: 'pixelated'}} />}
+              <div className="w-9 h-9 border-2 border-retro-dark overflow-hidden bg-white flex-shrink-0 relative">
+                {recipient?.avatarUrl ? (
+                  <img 
+                    src={recipient.avatarUrl} 
+                    className="w-full h-full object-cover" 
+                    style={{imageRendering: 'pixelated'}}
+                    loading="eager"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-retro-light">
+                    <span className="text-retro-dark font-display text-xs">{recipient?.name?.charAt(0) || '?'}</span>
+                  </div>
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="font-display text-xs text-retro-dark truncate">{recipient?.name || 'Chat'}</h1>
@@ -213,6 +249,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
         </div>
       </header>
 
+      {/* Pull to Refresh Indicator */}
+      <div 
+        className={`flex justify-center items-center overflow-hidden transition-all duration-300 ${isJungle ? 'bg-jungle-800' : 'bg-retro-light'}`}
+        style={{ height: pullDistance }}
+      >
+        {isRefreshing ? (
+          <div className={`w-6 h-6 border-2 ${isJungle ? 'border-jungle-accent' : 'border-retro-dark'} border-t-transparent rounded-full animate-spin`}></div>
+        ) : (
+          <p className={`font-display text-xs ${isJungle ? 'text-jungle-accent' : 'text-retro-dark'} ${pullDistance > 60 ? 'opacity-100' : 'opacity-50'}`}>
+            {pullDistance > 60 ? 'Release to refresh' : 'Pull down to refresh'}
+          </p>
+        )}
+      </div>
+
       {/* Quest Box - Compact */}
       {isJungle && challenge && (
         <div className="bg-jungle-800 border-b-2 border-jungle-700 py-2 px-3 text-center relative overflow-hidden">
@@ -223,7 +273,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
       )}
 
       {/* Chat Log - Messenger Style */}
-      <div className="flex-1 overflow-y-auto p-2 space-y-2 native-scroll scrollbar-hide">
+      <div 
+        ref={scrollRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="flex-1 overflow-y-auto p-2 space-y-2 native-scroll scrollbar-hide"
+      >
         {messages.map((msg, index) => {
           const isMe = msg.senderId === user?.id;
           const isAdminViewing = user?.role === UserRole.ADMIN;
@@ -315,7 +371,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
                       : 'bg-gray-300 border-gray-400 text-gray-500 cursor-not-allowed'
                   }`}
                 >
-                  {isJungle ? <Sword size={20} /> : <Send size={20} />}
+                  {isJungle ? <Zap size={20} /> : <Send size={20} />}
                 </button>
               </>
             )}

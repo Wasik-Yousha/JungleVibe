@@ -1,16 +1,16 @@
-import male1_1 from './assets/male1.1.png';
-import male1_2 from './assets/male1.2.jpg';
-import male1_3 from './assets/male1.3.jpg';
-import male1_4 from './assets/male1.4.png';
-import male1_5 from './assets/male1.5.png';
-import male1_6 from './assets/male1.6.jpg';
+import male1_1 from './assets/male1.1.webp';
+import male1_2 from './assets/male1.2.webp';
+import male1_3 from './assets/male1.3.webp';
+import male1_4 from './assets/male1.4.webp';
+import male1_5 from './assets/male1.5.webp';
+import male1_6 from './assets/male1.6.webp';
 
-import female1_1 from './assets/female1.1.png';
-import female1_2 from './assets/female1.2.png';
-import female1_3 from './assets/female1.3.png';
-import female1_4 from './assets/female1.4.jpg';
-import female1_5 from './assets/female1.5.png';
-import female1_6 from './assets/female1.6.png';
+import female1_1 from './assets/female1.1.webp';
+import female1_2 from './assets/female1.2.webp';
+import female1_3 from './assets/female1.3.webp';
+import female1_4 from './assets/female1.4.webp';
+import female1_5 from './assets/female1.5.webp';
+import female1_6 from './assets/female1.6.webp';
 
 export const APP_NAME = "Jungle Vibe";
 export const DAILY_MESSAGE_LIMIT = 10;

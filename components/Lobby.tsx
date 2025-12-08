@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { User, Gender } from '../types';
 import { firebaseUsers } from '../services/firebase';
 import { useAuth } from '../context/AuthContext';
-import { Zap, MessageCircle, AlertTriangle, X, Settings, LogOut, Info, RefreshCw } from 'lucide-react';
+import { Zap, MessageCircle, AlertTriangle, X, Settings, LogOut, Info } from 'lucide-react';
 import { JUNGLE_WARNING_TEXT } from '../constants';
 
 interface LobbyProps {
@@ -16,12 +16,45 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
   const [showWarning, setShowWarning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const startY = useRef(0);
+  const isPulling = useRef(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     const onlineUsers = await firebaseUsers.getOnlineUsers();
     setUsers(onlineUsers);
-    setTimeout(() => setIsRefreshing(false), 500);
+    setTimeout(() => {
+      setIsRefreshing(false);
+      setPullDistance(0);
+    }, 800);
+  };
+
+  // Pull to refresh handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (scrollRef.current && scrollRef.current.scrollTop === 0) {
+      startY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isPulling.current || isRefreshing) return;
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - startY.current;
+    if (diff > 0 && scrollRef.current && scrollRef.current.scrollTop === 0) {
+      setPullDistance(Math.min(diff * 0.5, 80));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullDistance > 60 && !isRefreshing) {
+      handleRefresh();
+    } else {
+      setPullDistance(0);
+    }
+    isPulling.current = false;
   };
 
   useEffect(() => {
@@ -127,13 +160,6 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
             <Settings size={18} />
           </button>
           <h1 className="font-display text-lg text-retro-dark">JUNGLE PARK</h1>
-          <button 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className={`p-1.5 border-2 border-retro-dark bg-white text-retro-dark active:scale-95 hover:bg-retro-light ${isRefreshing ? 'animate-spin' : ''}`}
-          >
-            <RefreshCw size={16} />
-          </button>
         </div>
         <button 
           onClick={() => setShowWarning(true)}
@@ -144,25 +170,60 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
         </button>
       </header>
 
+      {/* Pull to Refresh Indicator */}
+      <div 
+        className={`flex justify-center items-center overflow-hidden transition-all duration-300 bg-retro-light`}
+        style={{ height: pullDistance }}
+      >
+        {isRefreshing ? (
+          <div className="w-6 h-6 border-2 border-retro-dark border-t-transparent rounded-full animate-spin"></div>
+        ) : (
+          <p className={`font-display text-xs text-retro-dark ${pullDistance > 60 ? 'opacity-100' : 'opacity-50'}`}>
+            {pullDistance > 60 ? 'Release to refresh' : 'Pull down to refresh'}
+          </p>
+        )}
+      </div>
+
       {/* User List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 native-scroll scrollbar-hide">
+      <div 
+        ref={scrollRef}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className="flex-1 overflow-y-auto p-3 space-y-2 native-scroll scrollbar-hide"
+      >
         <h2 className="font-display text-xs text-retro-dark/50 mb-1">ONLINE MEMBERS</h2>
         
-        {users.filter(u => u.id !== user?.id).map(user => (
+        {users.filter(u => u.id !== user?.id).map(u => (
           <div 
-            key={user.id}
-            onClick={() => onJoinPrivate(user.id)}
+            key={u.id}
+            onClick={() => onJoinPrivate(u.id)}
             className="bg-white border-2 border-retro-dark p-2 flex items-center gap-3 shadow-pixel-sm cursor-pointer active:scale-[0.98] transition-transform"
           >
-            <div className="w-10 h-10 border-2 border-retro-dark overflow-hidden bg-retro-bg flex-shrink-0">
-              <img src={user.avatarUrl} className="w-full h-full object-cover" style={{imageRendering: 'pixelated'}} />
+            <div className="w-10 h-10 border-2 border-retro-dark overflow-hidden bg-retro-bg flex-shrink-0 relative">
+              {u.avatarUrl ? (
+                <img 
+                  src={u.avatarUrl} 
+                  className="w-full h-full object-cover" 
+                  style={{imageRendering: 'pixelated'}}
+                  loading="lazy"
+                  onError={(e) => {
+                    // Fallback for broken images
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-retro-light">
+                  <span className="text-retro-dark font-display text-xs">{u.name?.charAt(0) || '?'}</span>
+                </div>
+              )}
             </div>
             
             <div className="flex-1 min-w-0">
-              <h3 className="font-display text-xs text-retro-dark truncate">{user.name}</h3>
+              <h3 className="font-display text-xs text-retro-dark truncate">{u.name}</h3>
               <div className="flex items-center gap-1 text-[10px] text-gray-500 font-sans">
-                <span className={`w-1.5 h-1.5 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                {user.isOnline ? 'Online' : 'Offline'}
+                <span className={`w-1.5 h-1.5 rounded-full ${u.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                {u.isOnline ? 'Online' : 'Offline'}
               </div>
             </div>
 

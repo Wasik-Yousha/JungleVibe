@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import coverImage from '../assets/Cover.png';
+import coverImage from '../assets/Cover.webp';
+import { preloadAllImages } from '../utils/imagePreloader';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -7,34 +8,66 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
+  const [coverLoaded, setCoverLoaded] = useState(false);
+  const [imagesPreloaded, setImagesPreloaded] = useState(false);
+
+  // Preload cover image immediately
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => setCoverLoaded(true);
+    img.src = coverImage;
+  }, []);
+
+  // Preload all other images in background
+  useEffect(() => {
+    preloadAllImages().then(() => {
+      setImagesPreloaded(true);
+    });
+  }, []);
 
   useEffect(() => {
     const progressInterval = setInterval(() => {
       setProgress(prev => {
         if (prev >= 100) {
           clearInterval(progressInterval);
-          setTimeout(onComplete, 500);
+          // Only complete when images are preloaded
+          if (imagesPreloaded) {
+            setTimeout(onComplete, 300);
+          }
           return 100;
         }
-        // Slower loading: smaller increments
-        return prev + Math.random() * 4 + 1;
+        // Faster loading since images are preloading in parallel
+        return prev + Math.random() * 6 + 2;
       });
-    }, 200); // Slightly slower tick
+    }, 150);
 
     return () => {
       clearInterval(progressInterval);
     };
-  }, [onComplete]);
+  }, [onComplete, imagesPreloaded]);
+
+  // If progress is 100 but images not loaded, wait for them
+  useEffect(() => {
+    if (progress >= 100 && imagesPreloaded) {
+      setTimeout(onComplete, 300);
+    }
+  }, [progress, imagesPreloaded, onComplete]);
 
   return (
     <div className="h-full w-full bg-black flex flex-col relative overflow-hidden">
       {/* Cover Image - Full Screen */}
       <div className="absolute inset-0 z-0">
-        <img 
-          src={coverImage} 
-          alt="Jungle Vibe" 
-          className="w-full h-full object-contain object-center"
-        />
+        {coverLoaded ? (
+          <img 
+            src={coverImage} 
+            alt="Jungle Vibe" 
+            className="w-full h-full object-contain object-center"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        )}
         {/* Subtle gradient at bottom to make bar pop but keep transparency */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
       </div>

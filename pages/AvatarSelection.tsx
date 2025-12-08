@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Gender } from '../types';
 import { ArrowRight, Check } from 'lucide-react';
 import { AVATARS_MALE, AVATARS_FEMALE } from '../constants';
@@ -10,8 +10,14 @@ interface AvatarSelectionProps {
 
 const AvatarSelection: React.FC<AvatarSelectionProps> = ({ gender, onComplete }) => {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
 
   const avatars = gender === Gender.MALE ? AVATARS_MALE : AVATARS_FEMALE;
+
+  // Track which images have loaded
+  const handleImageLoad = (index: number) => {
+    setLoadedImages(prev => new Set(prev).add(index));
+  };
 
   const handleConfirm = () => {
     if (selectedIndex !== null) {
@@ -40,11 +46,19 @@ const AvatarSelection: React.FC<AvatarSelectionProps> = ({ gender, onComplete })
                   : 'border-retro-dark opacity-70'
               }`}
             >
+              {/* Loading placeholder */}
+              {!loadedImages.has(index) && (
+                <div className="absolute inset-1 flex items-center justify-center bg-retro-light">
+                  <div className="w-6 h-6 border-2 border-retro-dark border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              )}
               <img 
                 src={url} 
-                className="w-full h-full object-cover" 
+                className={`w-full h-full object-cover transition-opacity duration-300 ${loadedImages.has(index) ? 'opacity-100' : 'opacity-0'}`}
                 style={{imageRendering: 'pixelated'}} 
                 alt={`Avatar ${index + 1}`}
+                onLoad={() => handleImageLoad(index)}
+                loading="eager"
               />
               
               {selectedIndex === index && (
