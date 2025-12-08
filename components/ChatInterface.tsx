@@ -10,7 +10,7 @@ import {
   AVATARS_FEMALE
 } from '../constants';
 import Avatar from './Avatar';
-import { Send, Sword, Crown, ArrowLeft } from 'lucide-react';
+import { Send, Sword, Crown, ArrowLeft, RefreshCw } from 'lucide-react';
 import { generateTribeChallenge } from '../services/gemini';
 
 interface ChatInterfaceProps {
@@ -27,6 +27,17 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
   const [challenge, setChallenge] = useState<string>('');
   const [recipient, setRecipient] = useState<any>(null);
   const [todaysMessageCount, setTodaysMessageCount] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    // Refresh message count for private chats
+    if (mode === ChatMode.NORMAL && user && recipientId) {
+      const count = await firebaseMessages.getTodaysMessageCount(user.id, recipientId);
+      setTodaysMessageCount(count);
+    }
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   // Fetch recipient info if private
   useEffect(() => {
@@ -37,14 +48,39 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
     }
   }, [recipientId, mode]);
 
-  // Calculate today's message count for the room (Shared Limit)
+  // Calculate today's message count for the room (recharges at midnight)
+  useEffect(() => {
+    const updateMessageCount = async () => {
+      if (mode === ChatMode.NORMAL && user && recipientId) {
+        const count = await firebaseMessages.getTodaysMessageCount(user.id, recipientId);
+        setTodaysMessageCount(count);
+      }
+    };
+    
+    updateMessageCount();
+    
+    // Also check at midnight for recharge
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const msUntilMidnight = tomorrow.getTime() - now.getTime();
+    
+    const midnightTimer = setTimeout(() => {
+      setTodaysMessageCount(0); // Reset at midnight
+    }, msUntilMidnight);
+    
+    return () => clearTimeout(midnightTimer);
+  }, [mode, user, recipientId]);
+
+  // Update count when messages change
   useEffect(() => {
     if (mode === ChatMode.NORMAL && user && recipientId) {
       firebaseMessages.getTodaysMessageCount(user.id, recipientId).then(count => {
         setTodaysMessageCount(count);
       });
     }
-  }, [messages, mode, user, recipientId]);
+  }, [messages.length]);
 
   // Subscribe to real-time messages
   useEffect(() => {
@@ -129,6 +165,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
         </button>
         
         <div className="flex items-center gap-2 flex-1 min-w-0">
+          <button 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={`p-1 border-2 active:scale-95 ${isJungle ? 'border-jungle-accent text-jungle-accent hover:bg-jungle-700' : 'border-retro-dark text-retro-dark hover:bg-retro-light'} ${isRefreshing ? 'animate-spin' : ''}`}
+          >
+            <RefreshCw size={16} />
+          </button>
           {isJungle ? (
             <>
               <div className="w-9 h-9 bg-jungle-900 border-2 border-jungle-accent flex items-center justify-center relative overflow-hidden flex-shrink-0">

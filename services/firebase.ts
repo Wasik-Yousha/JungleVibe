@@ -1,5 +1,14 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
+  signOut, 
+  onAuthStateChanged, 
+  User as FirebaseUser 
+} from "firebase/auth";
 import { 
   getFirestore, 
   collection, 
@@ -44,10 +53,34 @@ const WILD_MESSAGES_COLLECTION = 'wild_messages';
 // ============ AUTH ============
 
 export const firebaseAuth = {
-  // Google Sign In
-  signInWithGoogle: async (): Promise<FirebaseUser> => {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
+  // Google Sign In - tries popup first, falls back to redirect
+  signInWithGoogle: async (): Promise<FirebaseUser | null> => {
+    try {
+      // Try popup first (works on desktop)
+      const result = await signInWithPopup(auth, googleProvider);
+      return result.user;
+    } catch (error: any) {
+      // If popup blocked or failed, use redirect
+      if (error.code === 'auth/popup-blocked' || 
+          error.code === 'auth/popup-closed-by-user' ||
+          error.code === 'auth/cancelled-popup-request') {
+        console.log('Popup failed, using redirect...');
+        await signInWithRedirect(auth, googleProvider);
+        return null; // Will be handled by getRedirectResult
+      }
+      throw error;
+    }
+  },
+
+  // Check for redirect result (call on app load)
+  checkRedirectResult: async (): Promise<FirebaseUser | null> => {
+    try {
+      const result = await getRedirectResult(auth);
+      return result?.user || null;
+    } catch (error) {
+      console.error('Redirect result error:', error);
+      return null;
+    }
   },
 
   // Sign Out
@@ -184,6 +217,7 @@ export const firebaseMessages = {
       senderId,
       text,
       timestamp: serverTimestamp(),
+      createdAt: Date.now(), // Fallback timestamp for ordering
       mode,
       realSenderName: senderName,
       recipientId: recipientId || null,
@@ -195,11 +229,8 @@ export const firebaseMessages = {
   // Subscribe to Wild Tribe messages (real-time)
   subscribeToWildMessages: (callback: (messages: Message[]) => void) => {
     const messagesRef = collection(db, WILD_MESSAGES_COLLECTION);
-    const q = query(
-      messagesRef, 
-      orderBy('timestamp', 'asc'),
-      limit(100) // Limit to last 100 messages
-    );
+    // Simple query without orderBy to avoid index requirement
+    const q = query(messagesRef, limit(100));
     
     return onSnapshot(q, (snapshot) => {
       const messages = snapshot.docs.map(doc => {
@@ -208,12 +239,17 @@ export const firebaseMessages = {
           id: doc.id,
           senderId: data.senderId,
           text: data.text,
-          timestamp: data.timestamp?.toMillis() || Date.now(),
+          timestamp: data.timestamp?.toMillis() || data.createdAt || Date.now(),
           mode: ChatMode.JUNGLE,
           realSenderName: data.realSenderName
         };
       });
+      // Sort locally by timestamp
+      messages.sort((a, b) => a.timestamp - b.timestamp);
       callback(messages);
+    }, (error) => {
+      console.error('Wild messages subscription error:', error);
+      callback([]);
     });
   },
 
@@ -221,10 +257,10 @@ export const firebaseMessages = {
   subscribeToPrivateMessages: (userId: string, recipientId: string, callback: (messages: Message[]) => void) => {
     const roomId = [userId, recipientId].sort().join('_');
     const messagesRef = collection(db, MESSAGES_COLLECTION);
+    // Query by roomId only, sort locally
     const q = query(
       messagesRef,
       where('roomId', '==', roomId),
-      orderBy('timestamp', 'asc'),
       limit(100)
     );
     
@@ -235,32 +271,49 @@ export const firebaseMessages = {
           id: doc.id,
           senderId: data.senderId,
           text: data.text,
-          timestamp: data.timestamp?.toMillis() || Date.now(),
+          timestamp: data.timestamp?.toMillis() || data.createdAt || Date.now(),
           mode: ChatMode.NORMAL,
           realSenderName: data.realSenderName
         };
       });
+      // Sort locally by timestamp
+      messages.sort((a, b) => a.timestamp - b.timestamp);
       callback(messages);
+    }, (error) => {
+      console.error('Private messages subscription error:', error);
+      callback([]);
     });
   },
 
-  // Get today's message count for power limit (private chats)
+  // Get today's message count for power limit (private chats) - recharges at midnight
   getTodaysMessageCount: async (userId: string, recipientId: string): Promise<number> => {
     const roomId = [userId, recipientId].sort().join('_');
     const messagesRef = collection(db, MESSAGES_COLLECTION);
     
-    // Start of today
+    // Start of today (local time)
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
+    const startOfDayMs = startOfDay.getTime();
     
+    // Query all messages in this room, then filter locally
     const q = query(
       messagesRef,
-      where('roomId', '==', roomId),
-      where('timestamp', '>=', Timestamp.fromDate(startOfDay))
+      where('roomId', '==', roomId)
     );
     
-    const snapshot = await getDocs(q);
-    return snapshot.size;
+    try {
+      const snapshot = await getDocs(q);
+      // Filter locally to get today's messages only
+      const todaysMessages = snapshot.docs.filter(doc => {
+        const data = doc.data();
+        const msgTime = data.timestamp?.toMillis() || data.createdAt || 0;
+        return msgTime >= startOfDayMs;
+      });
+      return todaysMessages.length;
+    } catch (error) {
+      console.error('Error getting today message count:', error);
+      return 0;
+    }
   }
 };
 

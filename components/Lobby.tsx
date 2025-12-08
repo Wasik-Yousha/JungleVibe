@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { User, Gender } from '../types';
 import { firebaseUsers } from '../services/firebase';
 import { useAuth } from '../context/AuthContext';
-import { Zap, MessageCircle, AlertTriangle, X, Settings, LogOut, Info } from 'lucide-react';
+import { Zap, MessageCircle, AlertTriangle, X, Settings, LogOut, Info, RefreshCw } from 'lucide-react';
 import { JUNGLE_WARNING_TEXT } from '../constants';
 
 interface LobbyProps {
@@ -15,6 +15,14 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [showWarning, setShowWarning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    const onlineUsers = await firebaseUsers.getOnlineUsers();
+    setUsers(onlineUsers);
+    setTimeout(() => setIsRefreshing(false), 500);
+  };
 
   useEffect(() => {
     // Subscribe to real-time online users
@@ -119,6 +127,13 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
             <Settings size={18} />
           </button>
           <h1 className="font-display text-lg text-retro-dark">JUNGLE PARK</h1>
+          <button 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className={`p-1.5 border-2 border-retro-dark bg-white text-retro-dark active:scale-95 hover:bg-retro-light ${isRefreshing ? 'animate-spin' : ''}`}
+          >
+            <RefreshCw size={16} />
+          </button>
         </div>
         <button 
           onClick={() => setShowWarning(true)}

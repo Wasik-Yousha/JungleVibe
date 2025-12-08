@@ -6,7 +6,7 @@ import { User as FirebaseUser } from 'firebase/auth';
 interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
-  signInWithGoogle: () => Promise<FirebaseUser>;
+  signInWithGoogle: () => Promise<FirebaseUser | null>;
   completeProfile: (name: string, gender: Gender, avatarUrl: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -22,6 +22,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [needsProfile, setNeedsProfile] = useState(false);
 
   useEffect(() => {
+    // Check for redirect result first (in case user was redirected back)
+    firebaseAuth.checkRedirectResult().then((redirectUser) => {
+      if (redirectUser) {
+        console.log('Got redirect result:', redirectUser.email);
+      }
+    });
+
     // Listen to Firebase auth state
     const unsubscribe = firebaseAuth.onAuthStateChanged(async (fbUser) => {
       setFirebaseUser(fbUser);
@@ -60,13 +67,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [user]);
 
-  const signInWithGoogle = async (): Promise<FirebaseUser> => {
+  const signInWithGoogle = async (): Promise<FirebaseUser | null> => {
     setLoading(true);
     try {
       const fbUser = await firebaseAuth.signInWithGoogle();
-      return fbUser;
-    } finally {
+      return fbUser; // May be null if redirect was used
+    } catch (error) {
+      console.error('Sign in error:', error);
       setLoading(false);
+      throw error;
     }
   };
 
