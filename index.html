@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#2c1810" />
+    <title>Jungle Vibe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              // Retro Pixel Palette
+              retro: {
+                bg: '#f4e4bc', // Map beige
+                panel: '#e6d5aa',
+                dark: '#2c1810',
+                light: '#fff5d7',
+                blue: '#3b5dc9',
+                red: '#d95763',
+                green: '#99e550',
+                gold: '#fbf236',
+              },
+              jungle: {
+                900: '#020b02', // Deepest Forest Night
+                800: '#0a1f0a', // Dark Moss
+                700: '#143314', // Jungle Leaves
+                accent: '#8fbc8f', // Pale Leaf / Mist
+                neon: '#4a8c4a', // Forest Green (Primary)
+                text: '#d1e7dd', // Misty White
+                danger: '#8a1c1c', // Rust / Blood
+                warning: '#d4a017', // Amber / Sap
+              }
+            },
+            fontFamily: {
+              sans: ['VT323', 'monospace'],
+              display: ['"Press Start 2P"', 'cursive'],
+            },
+            backgroundImage: {
+              'pixel-pattern': "url('https://www.transparenttextures.com/patterns/graphy.png')",
+              'jungle-pattern': "linear-gradient(to bottom, rgba(2,11,2,0.9), rgba(2,11,2,0.8)), url('https://www.transparenttextures.com/patterns/dark-matter.png')",
+            },
+            boxShadow: {
+              'pixel': '4px 4px 0px 0px rgba(0,0,0,0.2)',
+              'pixel-sm': '2px 2px 0px 0px rgba(0,0,0,0.2)',
+              'pixel-inset': 'inset 4px 4px 0px 0px rgba(0,0,0,0.1)',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        image-rendering: pixelated;
+      }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      
+      /* Mobile First Optimizations */
+      * { -webkit-tap-highlight-color: transparent; }
+      input, button, textarea { font-size: 16px !important; } /* Prevent iOS zoom */
+      
+      /* Safe Area Support */
+      .safe-top { padding-top: env(safe-area-inset-top); }
+      .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+      
+      /* Native-like scrolling */
+      .native-scroll {
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+      
+      /* Pixel Art UI */
+      .pixel-box {
+        border: 4px solid #2c1810;
+        position: relative;
+      }
+      .pixel-box::after {
+        content: '';
+        position: absolute;
+        top: -4px; left: -4px; right: -4px; bottom: -4px;
+        box-shadow: inset 0 0 0 4px #2c1810;
+        pointer-events: none;
+      }
+      
+      .pixel-btn {
+        border: 2px solid #2c1810;
+        box-shadow: 4px 4px 0 #2c1810;
+        transition: transform 0.1s, box-shadow 0.1s;
+      }
+      .pixel-btn:active {
+        transform: translate(2px, 2px);
+        box-shadow: 2px 2px 0 #2c1810;
+      }
+
+      .jungle-mode .pixel-box {
+        border-color: #6daa2c;
+      }
+      .jungle-mode .pixel-btn {
+        border-color: #6daa2c;
+        box-shadow: 4px 4px 0 #6daa2c;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.556.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-retro-bg text-retro-dark overflow-hidden font-sans touch-manipulation">
+    <div id="root" class="h-screen w-screen fixed inset-0"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
