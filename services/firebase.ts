@@ -150,10 +150,11 @@ export const firebaseUsers = {
     return null;
   },
 
-  // Get all online users
+  // Get all users (for Lobby)
   getOnlineUsers: async (): Promise<User[]> => {
     const usersRef = collection(db, USERS_COLLECTION);
-    const q = query(usersRef, where('isOnline', '==', true));
+    // Fetch all users, not just online ones
+    const q = query(usersRef, orderBy('lastSeen', 'desc'), limit(50));
     const snapshot = await getDocs(q);
     
     return snapshot.docs.map(doc => {
@@ -164,7 +165,7 @@ export const firebaseUsers = {
         gender: data.gender,
         role: data.role || UserRole.USER,
         avatarUrl: data.avatarUrl,
-        isOnline: true,
+        isOnline: data.isOnline || false,
         lastSeen: data.lastSeen?.toMillis?.() || Date.now()
       };
     });
@@ -179,10 +180,11 @@ export const firebaseUsers = {
     });
   },
 
-  // Listen to online users
+  // Listen to all users (for Lobby)
   subscribeToOnlineUsers: (callback: (users: User[]) => void) => {
     const usersRef = collection(db, USERS_COLLECTION);
-    const q = query(usersRef, where('isOnline', '==', true));
+    // Listen to all users, ordered by last seen
+    const q = query(usersRef, orderBy('lastSeen', 'desc'), limit(50));
     
     return onSnapshot(q, (snapshot) => {
       const users = snapshot.docs.map(doc => {
@@ -193,7 +195,7 @@ export const firebaseUsers = {
           gender: data.gender,
           role: data.role || UserRole.USER,
           avatarUrl: data.avatarUrl,
-          isOnline: true,
+          isOnline: data.isOnline || false,
           lastSeen: data.lastSeen?.toMillis?.() || Date.now()
         };
       });

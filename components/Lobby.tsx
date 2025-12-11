@@ -58,12 +58,8 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    const onlineUsers = await firebaseUsers.getOnlineUsers();
-    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-    const activeUsers = onlineUsers.filter(u => 
-      u.lastSeen && u.lastSeen > fiveMinutesAgo
-    );
-    setUsers(activeUsers);
+    const allUsers = await firebaseUsers.getOnlineUsers();
+    setUsers(allUsers);
     setTimeout(() => {
       setIsRefreshing(false);
       setPullDistance(0);
@@ -97,13 +93,9 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
   };
 
   useEffect(() => {
-    // Subscribe to real-time online users
-    const unsubscribe = firebaseUsers.subscribeToOnlineUsers((onlineUsers) => {
-      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-      const activeUsers = onlineUsers.filter(u => 
-        u.lastSeen && u.lastSeen > fiveMinutesAgo
-      );
-      setUsers(activeUsers);
+    // Subscribe to real-time users (all users, sorted by last seen)
+    const unsubscribe = firebaseUsers.subscribeToOnlineUsers((allUsers) => {
+      setUsers(allUsers);
     });
 
     return () => unsubscribe();
@@ -276,9 +268,12 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
         onTouchEnd={handleTouchEnd}
         className="flex-1 overflow-y-auto p-3 space-y-2 native-scroll scrollbar-hide"
       >
-        <h2 className="font-display text-xs text-retro-dark/50 mb-1">ONLINE MEMBERS</h2>
+        <h2 className="font-display text-xs text-retro-dark/50 mb-1">MEMBERS</h2>
         
-        {users.filter(u => u.id !== user?.id).map(u => (
+        {users.filter(u => u.id !== user?.id).map(u => {
+          const isReallyOnline = u.lastSeen && (Date.now() - u.lastSeen < 5 * 60 * 1000);
+          
+          return (
           <div 
             key={u.id}
             onClick={() => onJoinPrivate(u.id)}
@@ -288,7 +283,7 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
               {u.avatarUrl ? (
                 <img 
                   src={u.avatarUrl} 
-                  className="w-full h-full object-cover" 
+                  className={`w-full h-full object-cover ${!isReallyOnline ? 'grayscale' : ''}`}
                   style={{imageRendering: 'pixelated'}}
                   loading="lazy"
                   onError={(e) => {
@@ -306,14 +301,14 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
             <div className="flex-1 min-w-0">
               <h3 className="font-display text-xs text-retro-dark truncate">{u.name}</h3>
               <div className="flex items-center gap-1 text-[10px] text-gray-500 font-sans">
-                <span className={`w-1.5 h-1.5 rounded-full ${u.isOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
-                {u.isOnline ? 'Online' : 'Offline'}
+                <span className={`w-1.5 h-1.5 rounded-full ${isReallyOnline ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                {isReallyOnline ? 'Online' : 'Offline'}
               </div>
             </div>
 
-            <MessageCircle className="text-retro-blue" size={20} />
+            <MessageCircle className={`text-retro-blue ${!isReallyOnline ? 'opacity-50' : ''}`} size={20} />
           </div>
-        ))}
+        )})}
       </div>
     </div>
   );
