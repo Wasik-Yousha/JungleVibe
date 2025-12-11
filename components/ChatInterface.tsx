@@ -122,7 +122,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
     let unsubscribe: () => void;
 
     if (mode === ChatMode.JUNGLE) {
-      unsubscribe = firebaseMessages.subscribeToWildMessages((msgs) => {
+      unsubscribe = firebaseMessages.subscribeToWildMessages(user.id, (msgs) => {
         setMessages(msgs);
       });
     } else if (recipientId) {
@@ -189,8 +189,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
   };
 
   return (
-    <div className={`flex flex-col h-full w-full transition-colors duration-0 ${isJungle ? 'bg-jungle-900 bg-jungle-pattern' : 'bg-retro-bg bg-pixel-pattern'}`}>
-      
+    <div 
+      className={`flex flex-col h-full w-full transition-colors duration-0 ${isJungle ? 'bg-jungle-900 bg-jungle-pattern' : 'bg-retro-bg bg-pixel-pattern'}`}
+      style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '100%' }}
+    >
       {/* Header - Safe Area Top */}
       <header className={`p-3 border-b-4 flex items-center gap-3 z-20 safe-top ${isJungle ? 'bg-jungle-800 border-jungle-700 shadow-lg' : 'bg-retro-panel border-retro-dark'}`}>
         <button onClick={onBack} className={`p-1 border-2 active:scale-95 ${isJungle ? 'border-jungle-accent text-jungle-accent hover:bg-jungle-700' : 'border-retro-dark text-retro-dark'}`}>
@@ -279,6 +281,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         className="flex-1 overflow-y-auto p-2 space-y-2 native-scroll scrollbar-hide"
+        style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: 0 }}
       >
         {messages.map((msg, index) => {
           const isMe = msg.senderId === user?.id;
@@ -345,8 +348,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
       </div>
 
       {/* Input Area - Safe Area Bottom */}
-      <div className={`p-2 z-20 border-t-2 safe-bottom ${isJungle ? 'bg-jungle-800 border-jungle-700' : 'bg-retro-panel border-retro-dark'}`}>
-        <form onSubmit={handleSendMessage} className="relative flex items-center gap-2">
+      <div 
+        className={`p-2 z-20 border-t-2 safe-bottom shrink-0 ${isJungle ? 'bg-jungle-800 border-jungle-700' : 'bg-retro-panel border-retro-dark'}`}
+        style={{ minHeight: '60px', position: 'relative', paddingBottom: 'max(env(safe-area-inset-bottom), 8px)' }}
+      >
+        <form onSubmit={handleSendMessage} className="relative flex items-center gap-2" style={{ visibility: 'visible' }}>
             {mode === ChatMode.NORMAL && todaysMessageCount >= DAILY_MESSAGE_LIMIT ? (
                <div className="w-full py-2 bg-gray-200 border-2 border-gray-400 text-gray-500 font-display text-center text-xs">
                  OUT OF POWERS
@@ -360,6 +366,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
                     onChange={(e) => setInput(e.target.value)}
                     placeholder={isJungle ? "Send into the wild..." : "Type a message..."}
                     className={`w-full font-sans text-base outline-none placeholder-gray-400 bg-transparent ${isJungle ? 'text-jungle-text' : 'text-black'}`}
+                    style={{ fontSize: '16px', minHeight: '40px' }}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
                   />
                 </div>
                 <button
@@ -370,6 +381,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
                       ? (isJungle ? 'bg-jungle-700 border-jungle-accent text-jungle-accent' : 'bg-retro-green border-retro-dark text-white') 
                       : 'bg-gray-300 border-gray-400 text-gray-500 cursor-not-allowed'
                   }`}
+                  style={{ minWidth: '44px', minHeight: '44px' }}
                 >
                   {isJungle ? <Zap size={20} /> : <Send size={20} />}
                 </button>

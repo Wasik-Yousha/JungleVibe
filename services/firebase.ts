@@ -219,7 +219,8 @@ export const firebaseMessages = {
       timestamp: serverTimestamp(),
       createdAt: Date.now(), // Fallback timestamp for ordering
       mode,
-      realSenderName: senderName,
+      // SECURITY: Never store real name in Wild mode to ensure anonymity
+      realSenderName: mode === ChatMode.JUNGLE ? null : senderName,
       recipientId: recipientId || null,
       // For private chats, create a unique room ID
       roomId: mode === ChatMode.JUNGLE ? 'wild_global' : [senderId, recipientId].sort().join('_')
@@ -227,7 +228,7 @@ export const firebaseMessages = {
   },
 
   // Subscribe to Wild Tribe messages (real-time)
-  subscribeToWildMessages: (callback: (messages: Message[]) => void) => {
+  subscribeToWildMessages: (currentUserId: string, callback: (messages: Message[]) => void) => {
     const messagesRef = collection(db, WILD_MESSAGES_COLLECTION);
     // Simple query without orderBy to avoid index requirement
     const q = query(messagesRef, limit(100));
@@ -235,13 +236,15 @@ export const firebaseMessages = {
     return onSnapshot(q, (snapshot) => {
       const messages = snapshot.docs.map(doc => {
         const data = doc.data();
+        const isMe = data.senderId === currentUserId;
         return {
           id: doc.id,
-          senderId: data.senderId,
+          // SECURITY: Mask senderId for others to prevent correlation with Lobby users
+          senderId: isMe ? data.senderId : 'ANONYMOUS',
           text: data.text,
-          timestamp: data.timestamp?.toMillis() || data.createdAt || Date.now(),
+          timestamp: data.timestamp?.toMillis?.() || data.createdAt || Date.now(),
           mode: ChatMode.JUNGLE,
-          realSenderName: data.realSenderName
+          realSenderName: null 
         };
       });
       // Sort locally by timestamp
@@ -249,7 +252,7 @@ export const firebaseMessages = {
       callback(messages);
     }, (error) => {
       console.error('Wild messages subscription error:', error);
-      callback([]);
+      // Don't pass empty array, keep existing messages
     });
   },
 
@@ -271,7 +274,7 @@ export const firebaseMessages = {
           id: doc.id,
           senderId: data.senderId,
           text: data.text,
-          timestamp: data.timestamp?.toMillis() || data.createdAt || Date.now(),
+          timestamp: data.timestamp?.toMillis?.() || data.createdAt || Date.now(),
           mode: ChatMode.NORMAL,
           realSenderName: data.realSenderName
         };
@@ -281,7 +284,7 @@ export const firebaseMessages = {
       callback(messages);
     }, (error) => {
       console.error('Private messages subscription error:', error);
-      callback([]);
+      // Don't pass empty array, keep existing messages
     });
   },
 

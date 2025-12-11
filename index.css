@@ -1,0 +1,136 @@
+/* Cross-browser fixes and mobile optimizations */
+
+/* Reset and base styles */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  height: 100dvh; /* Dynamic viewport height for mobile browsers */
+  width: 100%;
+  overflow: hidden;
+  position: fixed;
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Prevent pull-to-refresh on mobile browsers */
+body {
+  overscroll-behavior-y: contain;
+  min-height: -webkit-fill-available; /* iOS fix */
+}
+
+#root {
+  height: 100%;
+  height: 100dvh;
+  width: 100%;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
+
+/* Input field fixes for all browsers */
+input, textarea, button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border-radius: 0;
+  font-family: inherit;
+}
+
+/* Fix for Safari input zoom */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+  font-size: 16px !important;
+  min-height: 44px;
+}
+
+/* Ensure input containers are visible */
+form {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Fix flexbox issues in Safari/Firefox */
+.flex {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+.flex-1 {
+  -webkit-box-flex: 1;
+  -webkit-flex: 1 1 0%;
+  -moz-box-flex: 1;
+  -ms-flex: 1 1 0%;
+  flex: 1 1 0%;
+}
+
+.flex-col {
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+  -webkit-flex-direction: column;
+  -moz-box-orient: vertical;
+  -moz-box-direction: normal;
+  -ms-flex-direction: column;
+  flex-direction: column;
+}
+
+/* Ensure message input is always visible */
+[class*="safe-bottom"] {
+  position: relative !important;
+  z-index: 100 !important;
+  background: inherit;
+  min-height: 60px;
+}
+
+/* Fix for disappearing elements */
+.p-2, .p-3, .p-4 {
+  visibility: visible !important;
+}
+
+/* Scrolling fixes */
+.overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
+}
+
+/* Animation for spinner */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Border-box for Safari */
+.border-2, .border-4 {
+  box-sizing: border-box;
+}
+
+/* Ensure buttons are tappable */
+button {
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Fix z-index stacking */
+header {
+  position: relative;
+  z-index: 50;
+}

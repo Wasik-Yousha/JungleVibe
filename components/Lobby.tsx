@@ -15,11 +15,24 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [showWarning, setShowWarning] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showPromo, setShowPromo] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const startY = useRef(0);
   const isPulling = useRef(false);
+
+  useEffect(() => {
+    // Show promo if not seen in this session
+    const hasSeenPromo = sessionStorage.getItem('hasSeenWildPromo');
+    if (!hasSeenPromo) {
+      const timer = setTimeout(() => {
+        setShowPromo(true);
+        sessionStorage.setItem('hasSeenWildPromo', 'true');
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -68,6 +81,47 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
 
   return (
     <div className="flex flex-col h-full w-full bg-retro-bg bg-pixel-pattern relative">
+      {/* Wild Tribe Promo Modal */}
+      {showPromo && (
+        <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+          <div className="bg-jungle-900 border-4 border-jungle-accent p-6 max-w-xs w-full shadow-[0_0_20px_rgba(74,140,74,0.5)] relative overflow-hidden">
+            {/* Background Effect */}
+            <div className="absolute inset-0 bg-jungle-pattern opacity-30 pointer-events-none"></div>
+            
+            <button 
+              onClick={() => setShowPromo(false)}
+              className="absolute top-2 right-2 text-jungle-accent hover:text-white z-20"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="relative z-10 text-center">
+              <div className="w-16 h-16 bg-jungle-800 rounded-full border-2 border-jungle-neon mx-auto mb-4 flex items-center justify-center shadow-[0_0_15px_rgba(74,140,74,0.3)]">
+                <Zap size={32} className="text-jungle-warning animate-pulse" />
+              </div>
+
+              <h2 className="font-display text-xl text-jungle-accent mb-2 tracking-wider">THE WILD TRIBE</h2>
+              <p className="font-sans text-sm text-jungle-text mb-6 leading-relaxed">
+                Enter the deep jungle where identities are hidden and chaos reigns.
+                <br/><br/>
+                <span className="text-jungle-warning">Anonymous. No Limits.</span>
+              </p>
+
+              <button 
+                onClick={() => {
+                  setShowPromo(false);
+                  setShowWarning(true);
+                }}
+                className="w-full py-3 bg-jungle-accent text-jungle-900 font-display text-sm border-b-4 border-jungle-neon active:border-b-0 active:translate-y-1 transition-all flex items-center justify-center gap-2 hover:bg-white"
+              >
+                <Zap size={16} />
+                GO WILD NOW
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Settings Modal */}
       {showSettings && (
         <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm">
