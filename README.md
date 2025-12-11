@@ -1,8 +1,8 @@
 # 🌴 JUNGLE VIBE
 ### *Civilized by Day. Wild by Choice.*
 
-[![Play Now](https://img.shields.io/badge/PLAY_NOW-GO_WILD-success?style=for-the-badge&logo=vercel&color=2c1810)](https://jungle-vibe.vercel.app)
-*https://junglevibe.vercel.app/*
+[![Play Now](https://img.shields.io/badge/PLAY_NOW-GO_WILD-success?style=for-the-badge&logo=vercel&color=2c1810)](https://junglevibe.vercel.app)
+
 
 ---
 
