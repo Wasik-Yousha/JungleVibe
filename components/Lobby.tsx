@@ -21,16 +21,33 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const startY = useRef(0);
   const isPulling = useRef(false);
+  
+  // Refs to track modal states for the interval closure
+  const showWarningRef = useRef(showWarning);
+  const showSettingsRef = useRef(showSettings);
 
   useEffect(() => {
-    // Initial popup after 1.5s
+    showWarningRef.current = showWarning;
+  }, [showWarning]);
+
+  useEffect(() => {
+    showSettingsRef.current = showSettings;
+  }, [showSettings]);
+
+  useEffect(() => {
+    // Initial popup after 1.5s (only if no other modals open)
     const initialTimer = setTimeout(() => {
-      setShowPromo(true);
+      if (!showWarningRef.current && !showSettingsRef.current) {
+        setShowPromo(true);
+      }
     }, 1500);
 
     // Recurring popup every 30s
     const interval = setInterval(() => {
-      setShowPromo(true);
+      // Only show if user is in Lobby (component mounted) AND no other modals are open
+      if (!showWarningRef.current && !showSettingsRef.current) {
+        setShowPromo(true);
+      }
     }, 30000);
 
     return () => {
