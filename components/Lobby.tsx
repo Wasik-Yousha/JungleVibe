@@ -23,15 +23,20 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
   const isPulling = useRef(false);
 
   useEffect(() => {
-    // Show promo if not seen in this session
-    const hasSeenPromo = sessionStorage.getItem('hasSeenWildPromo');
-    if (!hasSeenPromo) {
-      const timer = setTimeout(() => {
-        setShowPromo(true);
-        sessionStorage.setItem('hasSeenWildPromo', 'true');
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
+    // Initial popup after 1.5s
+    const initialTimer = setTimeout(() => {
+      setShowPromo(true);
+    }, 1500);
+
+    // Recurring popup every 30s
+    const interval = setInterval(() => {
+      setShowPromo(true);
+    }, 30000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(interval);
+    };
   }, []);
 
   const handleRefresh = async () => {
