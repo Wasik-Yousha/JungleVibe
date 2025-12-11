@@ -1,7 +1,8 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = process.env.API_KEY || ''; // Fallback to empty to prevent crash, will handle error
-const ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
+const apiKey = process.env.API_KEY || ''; 
+// Initialize AI only if key is present and not the placeholder
+const ai = (apiKey && apiKey !== 'PLACEHOLDER_API_KEY') ? new GoogleGenAI({ apiKey }) : null;
 
 export const generateTribeChallenge = async (): Promise<string> => {
   if (!ai) return "The Tribe Leader is meditating. (API Key missing)";
