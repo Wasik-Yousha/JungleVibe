@@ -265,8 +265,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
         )}
       </div>
 
-      {/* Quest Box - Compact */}
-      {isJungle && challenge && (
+      {/* Quest Box - Compact (Hidden for now) */}
+      {false && isJungle && challenge && (
         <div className="bg-jungle-800 border-b-2 border-jungle-700 py-2 px-3 text-center relative overflow-hidden">
           <div className="absolute inset-0 bg-black/20 pointer-events-none"></div>
           <p className="font-display text-[8px] text-jungle-warning mb-0.5 relative z-10 tracking-widest">QUEST</p>
