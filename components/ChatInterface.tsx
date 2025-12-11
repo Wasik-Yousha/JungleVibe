@@ -10,7 +10,7 @@ import {
   AVATARS_FEMALE
 } from '../constants';
 import Avatar from './Avatar';
-import { Send, Crown, ArrowLeft, Zap } from 'lucide-react';
+import { Send, Crown, ArrowLeft } from 'lucide-react';
 import { generateTribeChallenge } from '../services/gemini';
 
 interface ChatInterfaceProps {
@@ -383,7 +383,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
                   }`}
                   style={{ minWidth: '44px', minHeight: '44px' }}
                 >
-                  {isJungle ? <Zap size={20} /> : <Send size={20} />}
+                  <Send size={20} />
                 </button>
               </>
             )}
