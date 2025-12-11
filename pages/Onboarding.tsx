@@ -29,8 +29,8 @@ const Onboarding: React.FC<OnboardingProps> = ({ onNext }) => {
           <p className="font-sans text-lg text-retro-dark">IDENTIFY YOURSELF</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-retro-light border-2 border-retro-dark p-4">
+        <form onSubmit={handleSubmit} className="flex flex-col space-y-6 w-full">
+          <div className="bg-retro-light border-2 border-retro-dark p-4 w-full">
             <label className="block font-display text-[10px] text-retro-dark mb-2">ENTER REAL NAME</label>
             <input
               type="text"
@@ -43,7 +43,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onNext }) => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="w-full grid grid-cols-2 gap-4">
             <div 
               onClick={() => setGender(Gender.MALE)}
               className={`cursor-pointer border-2 p-4 text-center transition-all active:scale-95 ${
@@ -71,7 +71,7 @@ const Onboarding: React.FC<OnboardingProps> = ({ onNext }) => {
 
           <button
             type="submit"
-            className="w-full py-4 mt-2 bg-retro-green border-4 border-retro-dark shadow-pixel font-display text-white text-lg active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3"
+            className="w-full py-4 bg-retro-green border-4 border-retro-dark shadow-pixel font-display text-white text-lg active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-3"
           >
             NEXT <ArrowRight size={20} />
           </button>
