@@ -20,6 +20,7 @@ export interface User {
   role: UserRole;
   avatarUrl: string;
   isOnline: boolean;
+  lastSeen?: number;
 }
 
 export interface Message {

@@ -28,6 +28,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
   const [recipient, setRecipient] = useState<any>(null);
   const [todaysMessageCount, setTodaysMessageCount] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(0);
   
   // Pull to refresh state
   const [pullDistance, setPullDistance] = useState(0);
@@ -80,6 +81,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
       });
     }
   }, [recipientId, mode]);
+
+  // Subscribe to online count for Jungle mode
+  useEffect(() => {
+    if (mode === ChatMode.JUNGLE) {
+      const unsubscribe = firebaseUsers.subscribeToOnlineUsers((users) => {
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+        const activeCount = users.filter(u => u.lastSeen && u.lastSeen > fiveMinutesAgo).length;
+        setOnlineCount(activeCount);
+      });
+      return () => unsubscribe();
+    }
+  }, [mode]);
 
   // Calculate today's message count for the room (recharges at midnight)
   useEffect(() => {
@@ -204,7 +217,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ mode, recipientId, onBack
             <>
               <div className="min-w-0">
                 <h1 className="font-display text-xs text-jungle-accent tracking-wider truncate">THE WILD TRIBE</h1>
-                <p className="font-sans text-[10px] text-jungle-neon opacity-80">Deep Jungle • Anonymous</p>
+                <p className="font-sans text-[10px] text-jungle-neon opacity-80">Deep Jungle • {onlineCount} Online</p>
               </div>
             </>
           ) : (

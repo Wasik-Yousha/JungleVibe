@@ -59,7 +59,11 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     const onlineUsers = await firebaseUsers.getOnlineUsers();
-    setUsers(onlineUsers);
+    const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+    const activeUsers = onlineUsers.filter(u => 
+      u.lastSeen && u.lastSeen > fiveMinutesAgo
+    );
+    setUsers(activeUsers);
     setTimeout(() => {
       setIsRefreshing(false);
       setPullDistance(0);
@@ -95,7 +99,11 @@ const Lobby: React.FC<LobbyProps> = ({ onJoinWild, onJoinPrivate }) => {
   useEffect(() => {
     // Subscribe to real-time online users
     const unsubscribe = firebaseUsers.subscribeToOnlineUsers((onlineUsers) => {
-      setUsers(onlineUsers);
+      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+      const activeUsers = onlineUsers.filter(u => 
+        u.lastSeen && u.lastSeen > fiveMinutesAgo
+      );
+      setUsers(activeUsers);
     });
 
     return () => unsubscribe();

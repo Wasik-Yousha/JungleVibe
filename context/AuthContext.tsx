@@ -56,6 +56,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
+  // Heartbeat to keep user online
+  useEffect(() => {
+    if (!user) return;
+
+    // Initial update
+    firebaseUsers.setOnlineStatus(user.id, true);
+
+    const interval = setInterval(() => {
+      firebaseUsers.setOnlineStatus(user.id, true);
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [user]);
+
   // Set offline when window closes
   useEffect(() => {
     const handleBeforeUnload = () => {

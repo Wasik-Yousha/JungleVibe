@@ -143,7 +143,8 @@ export const firebaseUsers = {
         gender: data.gender,
         role: data.role || UserRole.USER,
         avatarUrl: data.avatarUrl,
-        isOnline: data.isOnline || false
+        isOnline: data.isOnline || false,
+        lastSeen: data.lastSeen?.toMillis?.() || Date.now()
       };
     }
     return null;
@@ -163,7 +164,8 @@ export const firebaseUsers = {
         gender: data.gender,
         role: data.role || UserRole.USER,
         avatarUrl: data.avatarUrl,
-        isOnline: true
+        isOnline: true,
+        lastSeen: data.lastSeen?.toMillis?.() || Date.now()
       };
     });
   },
@@ -191,7 +193,8 @@ export const firebaseUsers = {
           gender: data.gender,
           role: data.role || UserRole.USER,
           avatarUrl: data.avatarUrl,
-          isOnline: true
+          isOnline: true,
+          lastSeen: data.lastSeen?.toMillis?.() || Date.now()
         };
       });
       callback(users);
